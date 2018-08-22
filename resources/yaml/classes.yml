@@ -1,0 +1,15 @@
+http://schema.org/Hotel:
+  label: Hotel
+  description: a description of a hotel
+
+http://xmlns.com/foaf/0.1/Person:
+  label: Person
+  description: A person.
+
+http://xmlns.com/foaf/0.1/Event:
+  label: Event
+  description: An Event
+
+http://schema.org/Animal:
+  label: Animal
+  description: An animal
