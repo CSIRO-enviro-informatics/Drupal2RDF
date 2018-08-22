@@ -28,6 +28,7 @@ class ConfigForm extends FormBase{
     return 'config_form';
   }
 
+  // returns all labels of available ontologies
   public function ontology_get_labels(){
     $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
     $yaml = new Yaml();
@@ -37,6 +38,7 @@ class ConfigForm extends FormBase{
     return $ont_label_list;
   }
 
+  // returns an array for a given ontology : Ont[id,label,desc]
   public function ontology_get_ontology(string $ontologyName){
     $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
     $yaml = new Yaml();
@@ -46,7 +48,15 @@ class ConfigForm extends FormBase{
     return $ontology;
   }
 
-  
+  // returns file for given array
+  public function ontology_get_classes(array $ontArray){
+    $filename = $ontArray['id'];
+    $data = __DIR__ . '/../../resources/onts_yaml/' . $filename . '_classes.yml';
+    $yaml = new Yaml();
+    $ontology_class_list = $yaml->parse(file_get_contents($data));
+
+    return $ontology_class_list;
+  }
 
   public function buildForm(array $form, FormStateInterface $form_state){
     // Display page 2 if $form_state->get('page_num') == 2.
@@ -92,6 +102,11 @@ class ConfigForm extends FormBase{
       '#type' => 'submit',
       '#value' => $this->t('Calculate'),
     ];
+
+    // DEBUGGING HERE 
+    $ont = $this->ontology_get_ontology('Agreements');
+    $id = $this->ontology_get_classes($ont);
+    var_dump($id);
 
     return $form;
   }
