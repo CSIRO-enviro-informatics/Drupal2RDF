@@ -12,12 +12,13 @@ class ConfigForm extends FormBase{
     return 'config_form';
   }
 
-  public function get_ontology_list(){
+  public function ontology_get_labels(){
     $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
     $yaml = new Yaml();
-    $ont_list = $yaml->parse(file_get_contents($data));
+    $ont_parent_list = $yaml->parse(file_get_contents($data));
+    $ont_label_list = array_column($ont_parent_list, 'label');
 
-    return $ont_list;
+    return $ont_label_list;
   }
 
   public function buildForm(array $form, FormStateInterface $form_state) {
@@ -33,7 +34,7 @@ class ConfigForm extends FormBase{
       '#title' => $this->t('Ontology Type'),
       '#description' => $this->t('Select the Ontology you want to use'),
       '#type' => 'select',
-      '#options' => get_ontology_list(),
+      '#options' => $this->ontology_get_labels(),
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
