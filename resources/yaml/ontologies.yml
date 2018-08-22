@@ -1,0 +1,51 @@
+# a list of available ontologies
+
+Agreements:
+  id: agr
+  label: Agreements
+  description: Agreements Ont
+
+DCAT:
+  id: dcat
+  label: DCAT
+  description: DCAT ontology
+
+Dublin Core:
+  id: dcterms
+  label: Dublin Core
+  description: Dublin Core ontology
+
+FOAF:
+  id: foaf
+  label: FOAF
+  description: Friend of a Friend ontology
+
+Organizations:
+  id: org
+  label: Organizations
+  description: Organizations ontology
+
+Owl:
+  id: owl
+  label: Owl
+  description: Owl ontology
+
+Profile Description:
+  id: profiledesc
+  label: Profile Description
+  description: Profile Description ontology
+
+RDF:
+  id: rdf
+  label: RDf
+  description: RDF ontology
+
+RDFS:
+  id: rdfs
+  label: RDFS
+  description: RDFS ontology
+
+Schema.org:
+  id: schemaorg
+  label: Scehma.org
+  description: Schema.org ontology

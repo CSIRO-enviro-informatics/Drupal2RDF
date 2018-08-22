@@ -12,16 +12,32 @@ class ConfigForm extends FormBase{
     return 'config_form';
   }
 
+  public function get_ontology_list(){
+    $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
+    $yaml = new Yaml();
+    $ont_list = $yaml->parse(file_get_contents($data));
+
+    return $ont_list;
+  }
+
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form['content-type'] = [
       '#title' => $this->t('Content Type'),
-      '#description' => $this->t('Specify the Content Type you want to begin mapping to'),
+      '#description' => $this->t('Select the Content Type you want to begin mapping to'),
       '#type' => 'select',
       '#options' => node_type_get_names(),
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
-    $data = __DIR__ . '/../../resources/yaml/classes.yml';
+    $form['ontology-type'] = [
+      '#title' => $this->t('Ontology Type'),
+      '#description' => $this->t('Select the Ontology you want to use'),
+      '#type' => 'select',
+      '#options' => get_ontology_list(),
+        //'#default_value' => $form_state->getValue('rdf-type', ''),
+    ];
+
+    $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
     $yaml = new Yaml();
     $dump = $yaml->parse(file_get_contents($data));
 

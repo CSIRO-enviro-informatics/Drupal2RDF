@@ -1,0 +1,38 @@
+# properties in the ontology owl.ttl
+
+http://www.w3.org/2002/07/owl#backwardCompatibleWith: 
+  label: backwardCompatibleWith
+  description: The annotation property that indicates that a given ontology is backward compatible with another ontology.
+
+http://www.w3.org/2002/07/owl#bottomDataProperty: 
+  label: bottomDataProperty
+  description: The data property that does not relate any individual to any data value.
+
+http://www.w3.org/2002/07/owl#bottomObjectProperty: 
+  label: bottomObjectProperty
+  description: The object property that does not relate any two individuals.
+
+http://www.w3.org/2002/07/owl#deprecated: 
+  label: deprecated
+  description: The annotation property that indicates that a given entity has been deprecated.
+
+http://www.w3.org/2002/07/owl#incompatibleWith: 
+  label: incompatibleWith
+  description: The annotation property that indicates that a given ontology is incompatible with another ontology.
+
+http://www.w3.org/2002/07/owl#priorVersion: 
+  label: priorVersion
+  description: The annotation property that indicates the predecessor ontology of a given ontology.
+
+http://www.w3.org/2002/07/owl#topDataProperty: 
+  label: topDataProperty
+  description: The data property that relates every individual to every data value.
+
+http://www.w3.org/2002/07/owl#topObjectProperty: 
+  label: topObjectProperty
+  description: The object property that relates every two individuals.
+
+http://www.w3.org/2002/07/owl#versionInfo: 
+  label: versionInfo
+  description: The annotation property that provides version information for an ontology or another OWL construct.
+
