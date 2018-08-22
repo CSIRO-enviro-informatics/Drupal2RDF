@@ -41,7 +41,6 @@ class ConfigForm extends FormBase{
   }
 
   public function buildForm(array $form, FormStateInterface $form_state){
-
     // Display page 2 if $form_state->get('page_num') == 2.
     if ($form_state->has('page_num') && $form_state->get('page_num') == 2){
       return $this->buildFormPageTwo($form, $form_state);
@@ -71,6 +70,7 @@ class ConfigForm extends FormBase{
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
+    // next button
     $form['actions'] = array('#type' => 'actions');
     $form['actions']['next'] = [
       '#type' => 'submit',
@@ -79,7 +79,6 @@ class ConfigForm extends FormBase{
       '#submit' => array(array($this, 'nextSubmit')),
       '#validate' => array(array($this, 'nextValidate')),
     ];
-
     return $form;
   }
 
@@ -92,6 +91,27 @@ class ConfigForm extends FormBase{
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
+
+    // next button
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['next'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Next >>'),
+      '#button_type' => 'primary',
+      '#submit' => array(array($this, 'nextSubmit')),
+      '#validate' => array(array($this, 'nextValidate')),
+    ];
+    return $form;
+  }
+
+  protected function buildFormPageThree(array $form, FormStateInterface $form_state){
+    $form['content-type'] = [
+      '#title' => $this->t('Content Type'),
+      '#description' => $this->t('PAGE 3'),
+      '#type' => 'select',
+      '#options' => node_type_get_names(),
+        //'#default_value' => $form_state->getValue('rdf-type', ''),
+    ];
     return $form;
   }
 
