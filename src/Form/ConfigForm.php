@@ -9,7 +9,6 @@ use Symfony\Component\Yaml\Yaml;
 class ConfigForm extends FormBase{
 
   public function nextSubmit(array &$form, FormStateInterface &$form_state) {
-
     $pageNum = $form_state->get('page_num');
     $prevPage = $pageNum-1;
     $nextPage = $pageNum+1;
@@ -29,8 +28,6 @@ class ConfigForm extends FormBase{
     return 'config_form';
   }
 
-
-
   public function ontology_get_labels(){
     $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
     $yaml = new Yaml();
@@ -39,6 +36,17 @@ class ConfigForm extends FormBase{
 
     return $ont_label_list;
   }
+
+  public function ontology_get_ontology(string $ontologyName){
+    $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
+    $yaml = new Yaml();
+    $ont_parent_list = $yaml->parse(file_get_contents($data));
+    $ontology = $ont_parent_list[$ontologyName];
+
+    return $ontology;
+  }
+
+  
 
   public function buildForm(array $form, FormStateInterface $form_state){
     // Display page 2 if $form_state->get('page_num') == 2.
@@ -79,6 +87,12 @@ class ConfigForm extends FormBase{
       '#submit' => array(array($this, 'nextSubmit')),
       '#validate' => array(array($this, 'nextValidate')),
     ];
+
+    $form['submit'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Calculate'),
+    ];
+
     return $form;
   }
 
@@ -110,7 +124,7 @@ class ConfigForm extends FormBase{
       '#description' => $this->t('PAGE 3'),
       '#type' => 'select',
       '#options' => node_type_get_names(),
-        //'#default_value' => $form_state->getValue('rdf-type', ''),
+      //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
     return $form;
   }
@@ -124,6 +138,10 @@ class ConfigForm extends FormBase{
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state){
-    drupal_set_message($form_state->getValue('content-type'));
+    $value = $form_state->getValue('ontology-type' , '#options');
+    $arr = $this->ontology_get_labels();
+    $val = $arr[$value];
+
+    drupal_set_message($val);
   }
 }
