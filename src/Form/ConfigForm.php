@@ -8,9 +8,28 @@ use Symfony\Component\Yaml\Yaml;
 
 class ConfigForm extends FormBase{
 
+  public function nextSubmit(array &$form, FormStateInterface &$form_state) {
+
+    $pageNum = $form_state->get('page_num');
+    $prevPage = $pageNum-1;
+    $nextPage = $pageNum+1;
+
+    $form_state->set(['page_values', $pageNum], $form_state->getValues());
+
+    if ($form_state->has(['page_values', $nextPage])) {
+      $form_state->setValues($form_state->get(['page_values', $nextPage]));
+    }
+
+    // When form rebuilds, build method would be chosen based on to page_num.
+    $form_state->set('page_num', $nextPage);
+    $form_state->setRebuild();
+  }
+
   public function getFormId(){
     return 'config_form';
   }
+
+
 
   public function ontology_get_labels(){
     $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
@@ -21,7 +40,21 @@ class ConfigForm extends FormBase{
     return $ont_label_list;
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state){
+
+    // Display page 2 if $form_state->get('page_num') == 2.
+    if ($form_state->has('page_num') && $form_state->get('page_num') == 2){
+      return $this->buildFormPageTwo($form, $form_state);
+    }
+    elseif ($form_state->has('page_num') && $form_state->get('page_num') == 3){
+      return $this->buildFormPageThree($form, $form_state);
+    }
+
+    // set initial page_num
+    if (!$form_state->has('page_num')){
+      $form_state->set('page_num', 1);
+    }
+
     $form['content-type'] = [
       '#title' => $this->t('Content Type'),
       '#description' => $this->t('Select the Content Type you want to begin mapping to'),
@@ -38,36 +71,36 @@ class ConfigForm extends FormBase{
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
-    $data = __DIR__ . '/../../resources/yaml/ontologies.yml';
-    $yaml = new Yaml();
-    $dump = $yaml->parse(file_get_contents($data));
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['next'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Next >>'),
+      '#button_type' => 'primary',
+      '#submit' => array(array($this, 'nextSubmit')),
+      '#validate' => array(array($this, 'nextValidate')),
+    ];
 
-    var_dump($dump);
-
-        /*
-        // Otherwise build page 1.
-        $form_state->set('page_num', 1);
-
-        $form['#title'] = $this->t('Content types');
-        $form['description'] = array(
-            '#type' => 'item',
-            '#title' => $this->t('Create a content type by importing Schema.Org entity type.'),
-        );
-        */
-
-
-        /*
-        $form['actions'] = array('#type' => 'actions');
-        $form['actions']['next'] = array(
-            '#type' => 'submit',
-            '#value' => $this->t('Next >>'),
-            '#button_type' => 'primary',
-            '#submit' => array(array($this, 'nextSubmit')),
-            '#validate' => array(array($this, 'nextValidate')),
-        );
-
-        */
     return $form;
+  }
+
+  protected function buildFormPageTwo(array $form, FormStateInterface $form_state){
+    $form['content-type'] = [
+      '#title' => $this->t('Content Type'),
+      '#description' => $this->t('PAGE 2'),
+      '#type' => 'select',
+      '#options' => node_type_get_names(),
+        //'#default_value' => $form_state->getValue('rdf-type', ''),
+    ];
+
+    return $form;
+  }
+
+  public function nextValidate(array $form, FormStateInterface $form_state) {
+  // @TODO validate if required.
+  }
+
+  public function pageTwoBackValidate(array $form, FormStateInterface $form_state) {
+  // @TODO validate if required.
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state){
