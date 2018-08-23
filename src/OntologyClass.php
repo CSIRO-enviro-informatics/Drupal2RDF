@@ -5,13 +5,24 @@ use Symfony\Component\Yaml\Yaml;
 
 class OntologyClass{
 
-  $yaml = new Yaml();
-  $ontologies_file = __DIR__ . '/../resources/yaml/ontologies.yml';
-  $ontologies_array = $yaml->parse(file_get_contents($ontologies_file));
+  //public $yaml = new Yaml();
+  public $ontologies_file = __DIR__ . '/../resources/yaml/ontologies.yml';
+  protected $yaml;
+
+  public function __construct() {
+    $this->yaml = new Yaml();
+  }
+
+  // returns an array of the ontologies_file
+  public function getArray(){
+    $array = $this->yaml->parse(file_get_contents($this->ontologies_file));
+    return $array;
+  }
 
   // takes in a String and returns a single ontology array
   public function getOntology(String $key){
-    $ontology = global $ontologies_array[$key];
+    $ontologies = $this->getArray();
+    $ontology = $ontologies[$key];
     return $ontology;
   }
 
@@ -42,7 +53,7 @@ class OntologyClass{
     $data = __DIR__ . '/../resources/onts_yaml/' . $filename . '_classes.yml';
     $classes = $yaml->parse(file_get_contents($data));
 
-    $return classes;
+    return $classes;
   }
 
   // returns an array of all properties for given ontology
@@ -51,7 +62,28 @@ class OntologyClass{
     $data = __DIR__ . '/../resources/onts_yaml/' . $filename . '_properties.yml';
     $properties = $yaml->parse(file_get_contents($data));
 
-    $return properties;
+    return $properties;
+  }
+
+  // returns an array of all labels
+  public function getLabels(){
+    $arr = $this->getArray();
+    $label = array_column($arr, 'label');
+    return $label;
+  }
+
+  // returns an array of all id's
+  public function getIds(array $arr){
+    $arr = $this->getArray();
+    $Id = array_column($arr, 'id');
+    return $Id;
+  }
+
+  // returns an array of all descriptions
+  public function getDescriptions(array $arr){
+    $arr = $this->getArray();
+    $description = array_column($arr, 'description');
+    return $description;
   }
 
 }

@@ -9,6 +9,14 @@ use Drupal\semantic_map\OntologyClass;
 
 class ConfigForm extends FormBase{
 
+  public $ontology;
+  public $ontology_array;
+
+  public function __construct(){
+    $this->ontology = new OntologyClass();
+    $this->ontology_array = $this->ontology->getArray();
+  }
+
   public function nextSubmit(array &$form, FormStateInterface &$form_state) {
     $pageNum = $form_state->get('page_num');
     $prevPage = $pageNum-1;
@@ -30,6 +38,9 @@ class ConfigForm extends FormBase{
   }
 
   public function buildForm(array $form, FormStateInterface $form_state){
+    $ontology = new OntologyClass();
+    $ontology_array = $ontology->getArray();
+
     // Display page 2 if $form_state->get('page_num') == 2.
     if ($form_state->has('page_num') && $form_state->get('page_num') == 2){
       return $this->buildFormPageTwo($form, $form_state);
@@ -55,7 +66,7 @@ class ConfigForm extends FormBase{
       '#title' => $this->t('Ontology Type'),
       '#description' => $this->t('Select the Ontology you want to use'),
       '#type' => 'select',
-      //'#options' => $this->ontology_get_labels(),
+      '#options' => $ontology->getLabel($ontology_array),
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
@@ -73,14 +84,6 @@ class ConfigForm extends FormBase{
       '#type' => 'submit',
       '#value' => $this->t('Calculate'),
     ];
-
-    // DEBUGGING HERE
-    //$ont = $this->ontology_get_ontology('Agreements');
-    //$id = $this->ontology_get_classes($ont);
-    $ontology = new OntologyClass();
-    $labels = $ontology->getLabel($ontology->$ontologies_array);
-
-    var_dump($labels);
 
     return $form;
   }
@@ -127,9 +130,9 @@ class ConfigForm extends FormBase{
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state){
-    //$value = $form_state->getValue('ontology-type' , '#options');
-    //$arr = $this->ontology_get_labels();
-    //$val = $arr[$value];
+    $value = $form_state->getValue('ontology-type' , '#options');
+    $arr = $this->ontology->getLabels();
+    $val = $arr[$value];
 
     drupal_set_message($val);
   }
