@@ -29,7 +29,7 @@ class OntologyClass{
   public function getClasses(array $arr){
     $key = $arr['id'];
     $data = __DIR__ . '/../resources/onts_yaml/' . $key . '_classes.yml';
-    $classes = $yaml->parse(file_get_contents($data));
+    $classes = $this->yaml->parse(file_get_contents($data));
 
     return $classes;
   }
@@ -38,7 +38,7 @@ class OntologyClass{
   public function getProperties(array $arr){
     $key = $arr['id'];
     $data = __DIR__ . '/../resources/onts_yaml/' . $key . '_properties.yml';
-    $properties = $yaml->parse(file_get_contents($data));
+    $properties = $this->yaml->parse(file_get_contents($data));
 
     return $properties;
   }

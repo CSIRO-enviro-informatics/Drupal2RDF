@@ -90,20 +90,23 @@ class ConfigForm extends FormBase{
     $ont = $this->ontology->getOntology('Agreements');
     $id = $this->ontology->getLabel($ont);
 
-    var_dump($id);
-
     return $form;
   }
 
   protected function buildFormPageTwo(array $form, FormStateInterface $form_state){
-    $form['content-type'] = [
-      '#title' => $this->t('Content Type'),
-      '#description' => $this->t('PAGE 2'),
+    $value = $form_state->get(['page_values', 1, 'ontology-type']);
+    $arr = $this->ontology->getLabels();
+    $val = $arr[$value];
+    $ont = $this->ontology->getOntology($val);
+    $classes = $this->ontology->getClasses($ont);
+
+    $form['class-type'] = [
+      '#title' => $this->t('Class Type'),
+      '#description' => $this->t('Select the Ontology Class you want to use'),
       '#type' => 'select',
-      '#options' => node_type_get_names(),
+      '#options' => array_column($classes, 'label'),
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
-
 
     // next button
     $form['actions'] = array('#type' => 'actions');
@@ -114,15 +117,22 @@ class ConfigForm extends FormBase{
       '#submit' => array(array($this, 'nextSubmit')),
       '#validate' => array(array($this, 'nextValidate')),
     ];
+
     return $form;
   }
 
   protected function buildFormPageThree(array $form, FormStateInterface $form_state){
-    $form['content-type'] = [
-      '#title' => $this->t('Content Type'),
-      '#description' => $this->t('PAGE 3'),
+    $value = $form_state->get(['page_values', 2, 'class-type']);
+    $arr = $this->ontology->getLabels();
+    $val = $arr[$value];
+    $ont = $this->ontology->getOntology($val);
+    $properties = $this->ontology->getProperties($ont);
+
+    $form['property-type'] = [
+      '#title' => $this->t('Property Type'),
+      '#description' => $this->t('Choose the properties you want to associate'),
       '#type' => 'select',
-      '#options' => node_type_get_names(),
+      '#options' => array_column($properties, 'label'),
       //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
     return $form;
