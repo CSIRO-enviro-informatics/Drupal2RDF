@@ -38,8 +38,6 @@ class ConfigForm extends FormBase{
   }
 
   public function buildForm(array $form, FormStateInterface $form_state){
-    $ontology = new OntologyClass();
-    $ontology_array = $ontology->getArray();
 
     // Display page 2 if $form_state->get('page_num') == 2.
     if ($form_state->has('page_num') && $form_state->get('page_num') == 2){
@@ -66,7 +64,7 @@ class ConfigForm extends FormBase{
       '#title' => $this->t('Ontology Type'),
       '#description' => $this->t('Select the Ontology you want to use'),
       '#type' => 'select',
-      '#options' => $ontology->getLabel($ontology_array),
+      '#options' => $this->ontology->getLabels(),
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
@@ -84,6 +82,15 @@ class ConfigForm extends FormBase{
       '#type' => 'submit',
       '#value' => $this->t('Calculate'),
     ];
+
+
+    //$arr = $this->ontology->getLabels();
+    //$val = $arr[$value];
+
+    $ont = $this->ontology->getOntology('Agreements');
+    $id = $this->ontology->getLabel($ont);
+
+    var_dump($id);
 
     return $form;
   }
@@ -133,7 +140,9 @@ class ConfigForm extends FormBase{
     $value = $form_state->getValue('ontology-type' , '#options');
     $arr = $this->ontology->getLabels();
     $val = $arr[$value];
+    $ont = $this->ontology->getOntology($val);
+    $id = $this->ontology->getId($ont);
 
-    drupal_set_message($val);
+    drupal_set_message($id);
   }
 }
