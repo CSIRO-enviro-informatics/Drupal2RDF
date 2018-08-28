@@ -92,13 +92,14 @@ class ConfigForm extends FormBase{
       '#value' => $this->t('Calculate'),
     ];
 
+    /// TEST CODE
     $node = $this->getFields('article');
-    $newArr = [];
+    //$newArr = [];
 
-    foreach ($node['node'] as $key){
-      $newArr[] = $key['label'];
-    }
-    var_dump($newArr);
+    //foreach ($node['node'] as $key){
+    //  $newArr[] = $key['label'];
+    //}
+    var_dump($node);
 
     return $form;
   }
@@ -205,7 +206,15 @@ class ConfigForm extends FormBase{
         $bundleFields[$entity_type_id][$field_name]['label'] = $field_definition->getLabel();
       }
     }
-    return $bundleFields;
+
+    $node = $bundleFields; //$this->getFields('article');
+    $newArr = [];
+
+    foreach ($node['node'] as $key){
+      $newArr[] = $key['label'];
+    }
+
+    return $newArr;
   }
 
   public function nextValidate(array $form, FormStateInterface $form_state) {
