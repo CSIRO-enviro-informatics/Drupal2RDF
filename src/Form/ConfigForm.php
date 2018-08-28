@@ -17,6 +17,7 @@ class ConfigForm extends FormBase{
     $this->ontology_array = $this->ontology->getArray();
   }
 
+  // handles the "next" button.
   public function nextSubmit(array &$form, FormStateInterface &$form_state) {
     $pageNum = $form_state->get('page_num');
     $prevPage = $pageNum-1;
@@ -52,18 +53,22 @@ class ConfigForm extends FormBase{
       $form_state->set('page_num', 1);
     }
 
+    // content type drop down
     $form['content-type'] = [
       '#title' => $this->t('Content Type'),
       '#description' => $this->t('Select the Content Type you want to begin mapping to'),
       '#type' => 'select',
+      '#required' => TRUE,
       '#options' => node_type_get_names(),
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
+    // ontology type drop down
     $form['ontology-type'] = [
-      '#title' => $this->t('Ontology Type'),
+      '#title' => $this->t('Ontology'),
       '#description' => $this->t('Select the Ontology you want to use'),
       '#type' => 'select',
+      '#required' => TRUE,
       '#options' => $this->ontology->getLabels(),
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
@@ -78,28 +83,41 @@ class ConfigForm extends FormBase{
       '#validate' => array(array($this, 'nextValidate')),
     ];
 
+
+    // DEBUGGING PURPOSES ONLy
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Calculate'),
     ];
 
-
-    //$arr = $this->ontology->getLabels();
-    //$val = $arr[$value];
-
-    $ont = $this->ontology->getOntology('Agreements');
-    $id = $this->ontology->getLabel($ont);
-
     return $form;
   }
 
   protected function buildFormPageTwo(array $form, FormStateInterface $form_state){
-    $value = $form_state->get(['page_values', 1, 'ontology-type']);
-    $arr = $this->ontology->getLabels();
-    $val = $arr[$value];
-    $ont = $this->ontology->getOntology($val);
-    $classes = $this->ontology->getClasses($ont);
+    // values of first page
+    $value = $form_state->get(['page_values', 1]);
 
+    // get CT name
+    $ct_names = node_type_get_names();
+    $ct = $ct_names[$value['content-type']];
+    // get ont name
+    $ont_names = $this->ontology->getLabels();
+    $ont = $ont_names[$value['ontology-type']];
+
+    // set ontArray and get class
+    $ontArray = $this->ontology->getOntology($ont);
+    $classes = $this->ontology->getClasses($ontArray);
+
+    // top of form displaying current data
+
+    //top section
+    $form['#title'] = $this->t('Content types');
+    $form['description'] = array(
+      '#type' => 'item',
+      '#title' => $this->t('Mapping content type @CT, using the @ont ontology', array('@CT' => $ct, '@ont' => $ont)),
+    );
+
+    // class type drop down
     $form['class-type'] = [
       '#title' => $this->t('Class Type'),
       '#description' => $this->t('Select the Ontology Class you want to use'),
@@ -122,11 +140,16 @@ class ConfigForm extends FormBase{
   }
 
   protected function buildFormPageThree(array $form, FormStateInterface $form_state){
-    $value = $form_state->get(['page_values', 2, 'class-type']);
-    $arr = $this->ontology->getLabels();
-    $val = $arr[$value];
-    $ont = $this->ontology->getOntology($val);
-    $properties = $this->ontology->getProperties($ont);
+    // values from first page
+    $value = $form_state->get(['page_values', 1]);
+
+    // get ont name
+    $ont_names = $this->ontology->getLabels();
+    $ont = $ont_names[$value['ontology-type']];
+
+    // set ontArray and get properties
+    $ontArray = $this->ontology->getOntology($ont);
+    $properties = $this->ontology->getProperties($ontArray);
 
     $form['property-type'] = [
       '#title' => $this->t('Property Type'),
@@ -135,6 +158,22 @@ class ConfigForm extends FormBase{
       '#options' => array_column($properties, 'label'),
       //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
+
+    $table = array(
+      '#type' => 'table',
+      '#tree' => TRUE,
+      '#header' => array(
+        $this->t('Enable'),
+        $this->t('Property'),
+        $this->t('Data Type'),
+      ),
+      '#regions' => array(),
+      '#attributes' => array(
+        'class' => array('rdfui-field-mappings'),
+        //'id' => Html::getId('rdf-builder'),
+      ),
+    );
+
     return $form;
   }
 
