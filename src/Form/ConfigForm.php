@@ -159,22 +159,27 @@ class ConfigForm extends FormBase{
       //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
-    $table = array(
+    $form['contacts'] = array(
       '#type' => 'table',
-      '#tree' => TRUE,
+      '#caption' => $this->t('Sample Table'),
       '#header' => array(
-        $this->t('Enable'),
-        $this->t('Property'),
-        $this->t('Data Type'),
-      ),
-      '#regions' => array(),
-      '#attributes' => array(
-        'class' => array('rdfui-field-mappings'),
-        //'id' => Html::getId('rdf-builder'),
+        $this->t('Content Type Field'),
+        $this->t('Ontology Property'),
       ),
     );
 
+
+
+    for ($i = 1; $i <= 4; $i++){
+      $form['contacts'][$i]['name'] = [
+        '#type' => 'label',
+        '#title' => $i,
+
+      ];
+    }
+
     return $form;
+
   }
 
   public function nextValidate(array $form, FormStateInterface $form_state) {
