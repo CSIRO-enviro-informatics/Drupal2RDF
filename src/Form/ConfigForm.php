@@ -6,6 +6,8 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\Yaml\Yaml;
 use Drupal\semantic_map\OntologyClass;
+use Drupal\node\Entity\Node;
+use Drupal\field\FieldConfigInterface;
 
 class ConfigForm extends FormBase{
 
@@ -90,8 +92,17 @@ class ConfigForm extends FormBase{
       '#value' => $this->t('Calculate'),
     ];
 
+    $node = $this->getFields('article');
+    $newArr = [];
+
+    foreach ($node['node'] as $key){
+      $newArr[] = $key['label'];
+    }
+    var_dump($newArr);
+
     return $form;
   }
+
 
   protected function buildFormPageTwo(array $form, FormStateInterface $form_state){
     // values of first page
@@ -178,8 +189,23 @@ class ConfigForm extends FormBase{
       ];
     }
 
+
     return $form;
 
+  }
+
+  // returns fields for a given content-type (string)
+  public function getFields(string $bundle){
+    $entityManager = \Drupal::service('entity_field.manager');
+    $entity_type_id = 'node';
+
+    foreach ($entityManager->getFieldDefinitions($entity_type_id, $bundle) as $field_name => $field_definition) {
+      if (!empty($field_definition->getTargetBundle())) {
+        $bundleFields[$entity_type_id][$field_name]['type'] = $field_definition->getType();
+        $bundleFields[$entity_type_id][$field_name]['label'] = $field_definition->getLabel();
+      }
+    }
+    return $bundleFields;
   }
 
   public function nextValidate(array $form, FormStateInterface $form_state) {
