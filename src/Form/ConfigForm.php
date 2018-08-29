@@ -2,8 +2,11 @@
 
 namespace Drupal\semantic_map\Form;
 
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Symfony\Component\Yaml\Yaml;
 use Drupal\semantic_map\OntologyClass;
 use Drupal\node\Entity\Node;
@@ -19,7 +22,7 @@ class ConfigForm extends FormBase{
     $this->ontology_array = $this->ontology->getArray();
   }
 
-  // handles the "next" button.
+  // handles the "next" button. // NEEDS FIXING
   public function nextSubmit(array &$form, FormStateInterface &$form_state) {
     $pageNum = $form_state->get('page_num');
     $prevPage = $pageNum-1;
@@ -55,6 +58,12 @@ class ConfigForm extends FormBase{
       $form_state->set('page_num', 1);
     }
 
+    $form['#title'] = $this->t('Semantic Map');
+    $form['description'] = array(
+      '#type' => 'item',
+      '#title' => $this->t('Choose your Content Type and your Ontology'),
+    );
+
     // content type drop down
     $form['content-type'] = [
       '#title' => $this->t('Content Type'),
@@ -62,7 +71,6 @@ class ConfigForm extends FormBase{
       '#type' => 'select',
       '#required' => TRUE,
       '#options' => node_type_get_names(),
-        //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
     // ontology type drop down
@@ -72,7 +80,6 @@ class ConfigForm extends FormBase{
       '#type' => 'select',
       '#required' => TRUE,
       '#options' => $this->ontology->getLabels(),
-        //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
     // next button
@@ -85,21 +92,13 @@ class ConfigForm extends FormBase{
       '#validate' => array(array($this, 'nextValidate')),
     ];
 
-
+/*
     // DEBUGGING PURPOSES ONLy
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Calculate'),
     ];
-
-    /// TEST CODE
-    $node = $this->getFields('article');
-    //$newArr = [];
-
-    //foreach ($node['node'] as $key){
-    //  $newArr[] = $key['label'];
-    //}
-    var_dump($node);
+*/
 
     return $form;
   }
@@ -123,17 +122,20 @@ class ConfigForm extends FormBase{
     // top of form displaying current data
 
     //top section
-    $form['#title'] = $this->t('Content types');
+    $form['#title'] = $this->t('Semantic Map');
     $form['description'] = array(
       '#type' => 'item',
-      '#title' => $this->t('Mapping content type @CT, using the @ont ontology', array('@CT' => $ct, '@ont' => $ont)),
+      '#title' => $this->t('Selected: '),
+      '#description' =>
+      $this->t('Content Type: @CT', array('@CT' => $ct)) . '<br>' .
+      $this->t('Ontology: @ont', array('@ont' => $ont)),
     );
 
     // class type drop down
     $form['class-type'] = [
-      '#title' => $this->t('Class Type'),
+      '#title' => $this->t(' "@ont" Class Types', array('@ont' => $ont)),
       '#description' => $this->t('Select the Ontology Class you want to use'),
-      '#type' => 'select',
+      '#type' => 'checkboxes',
       '#options' => array_column($classes, 'label'),
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
@@ -155,6 +157,12 @@ class ConfigForm extends FormBase{
     // values from first page
     $value = $form_state->get(['page_values', 1]);
 
+    // get CT type names list, name, machineName and Fields
+    $ct_names = node_type_get_names();
+    $ct_name = $ct_names[$value['content-type']];
+    $ct_machine = $value['content-type'];
+    $ct_fields = $this->getFields($ct_machine);
+
     // get ont name
     $ont_names = $this->ontology->getLabels();
     $ont = $ont_names[$value['ontology-type']];
@@ -162,40 +170,56 @@ class ConfigForm extends FormBase{
     // set ontArray and get properties
     $ontArray = $this->ontology->getOntology($ont);
     $properties = $this->ontology->getProperties($ontArray);
+    $property_labels = array_column($properties, 'label');
 
-    $form['property-type'] = [
-      '#title' => $this->t('Property Type'),
-      '#description' => $this->t('Choose the properties you want to associate'),
-      '#type' => 'select',
-      '#options' => array_column($properties, 'label'),
-      //'#default_value' => $form_state->getValue('rdf-type', ''),
-    ];
+    $form['#title'] = $this->t('Semantic Map');
+    $form['description'] = array(
+      '#type' => 'item',
+      '#title' => $this->t('Choose fields and properties to be mapped to each other'),
+    );
 
-    $form['contacts'] = array(
+    // init table associative array and headers array
+    $table = array(
       '#type' => 'table',
-      '#caption' => $this->t('Sample Table'),
       '#header' => array(
-        $this->t('Content Type Field'),
-        $this->t('Ontology Property'),
+        'enable' => $this->t('Enable'),
+        'ct_field' => $this->t('Content Type Field'),
+        'ont_property' => $this->t('Ontology Property'),
       ),
     );
 
-
-
-    for ($i = 1; $i <= 4; $i++){
-      $form['contacts'][$i]['name'] = [
-        '#type' => 'label',
-        '#title' => $i,
-
-      ];
+    // Next, loop through the $ct_fields array array.length times,
+    // add select dropdown of ont per ct_field, and enable box.
+    // creates an associative array for each element
+    foreach ($ct_fields as $field) {
+      $table[$field] = array(
+        'enable' => array(
+          '#type' => 'checkbox',
+          '#title' => $this->t('Enable'),
+          '#title_display' => 'invisible',
+        ),
+        'ct_field' => array(
+          '#markup' => '<b>' . $field . '</b>' . '<br>' . $field .  $this->t(' description') . '</br>',
+          '#description' => $this->t('Select the Ontology Class you want to use'),
+        ),
+        'ont_property' => array(
+          '#type' => 'select',
+          '#title_display' => 'invisible',
+          '#title' => $this->t('Ontology Properties'),
+          '#options' => $property_labels,
+          '#empty_option' => $this->t('- Select a field type -'),
+        ),
+      );
     }
 
+    // set form to table
+    $form['fields'] = $table;
 
     return $form;
-
   }
 
-  // returns fields for a given content-type (string)
+  // returns fields for a given content-type (string)(ct_machineName)
+  // THIS CAN BE MORE EFFICIENT. BUNDLE SHOULD = BUNDLEFIELDS I THINK
   public function getFields(string $bundle){
     $entityManager = \Drupal::service('entity_field.manager');
     $entity_type_id = 'node';
@@ -207,9 +231,9 @@ class ConfigForm extends FormBase{
       }
     }
 
-    $node = $bundleFields; //$this->getFields('article');
+    // filter to only the editable fields
+    $node = $bundleFields;
     $newArr = [];
-
     foreach ($node['node'] as $key){
       $newArr[] = $key['label'];
     }
@@ -225,6 +249,8 @@ class ConfigForm extends FormBase{
   // @TODO validate if required.
   }
 
+
+  // THIS IS TESTING ONLY ATM
   public function submitForm(array &$form, FormStateInterface $form_state){
     $value = $form_state->getValue('ontology-type' , '#options');
     $arr = $this->ontology->getLabels();
