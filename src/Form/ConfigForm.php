@@ -28,6 +28,7 @@ class ConfigForm extends FormBase{
     $prevPage = $pageNum-1;
     $nextPage = $pageNum+1;
 
+    // save form state
     $form_state->set(['page_values', $pageNum], $form_state->getValues());
 
     if ($form_state->has(['page_values', $nextPage])) {
@@ -39,10 +40,29 @@ class ConfigForm extends FormBase{
     $form_state->setRebuild();
   }
 
+  // handles the "back" button. // NEEDS FIXING
+  public function backSubmit(array &$form, FormStateInterface &$form_state) {
+    $pageNum = $form_state->get('page_num');
+    $prevPage = $pageNum-1;
+    $nextPage = $pageNum+1;
+
+    // save form state
+    $form_state->set(['page_values', $pageNum], $form_state->getValues());
+
+    if ($form_state->has(['page_values', $prevPage])) {
+      $form_state->setValues($form_state->get(['page_values', $prevPage]));
+    }
+
+    // When form rebuilds, build method would be chosen based on to page_num.
+    $form_state->set('page_num', $prevPage);
+    $form_state->setRebuild();
+  }
+
   public function getFormId(){
     return 'config_form';
   }
 
+  // build form page 1
   public function buildForm(array $form, FormStateInterface $form_state){
 
     // Display page 2 if $form_state->get('page_num') == 2.
@@ -86,7 +106,7 @@ class ConfigForm extends FormBase{
     $form['actions'] = array('#type' => 'actions');
     $form['actions']['next'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Next >>'),
+      '#value' => $this->t('Next >'),
       '#button_type' => 'primary',
       '#submit' => array(array($this, 'nextSubmit')),
       '#validate' => array(array($this, 'nextValidate')),
@@ -103,7 +123,7 @@ class ConfigForm extends FormBase{
     return $form;
   }
 
-
+  // build form page 2
   protected function buildFormPageTwo(array $form, FormStateInterface $form_state){
     // values of first page
     $value = $form_state->get(['page_values', 1]);
@@ -144,11 +164,21 @@ class ConfigForm extends FormBase{
     $form['actions'] = array('#type' => 'actions');
     $form['actions']['next'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Next >>'),
+      '#value' => $this->t('Next >'),
       '#button_type' => 'primary',
       '#submit' => array(array($this, 'nextSubmit')),
       '#validate' => array(array($this, 'nextValidate')),
     ];
+
+    // back submit
+    $form['actions']['back'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('< Back'),
+      '#submit' => array(array($this, 'backSubmit')),
+      '#validate' => array(array($this, 'backValidate')),
+      '#weight' => -1,
+    ];
+
 
     return $form;
   }
@@ -215,6 +245,27 @@ class ConfigForm extends FormBase{
     // set form to table
     $form['fields'] = $table;
 
+    // next button
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['next'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Save'),
+      '#button_type' => 'primary',
+      //'#submit' => array(array($this, 'nextSubmit')),
+      //'#validate' => array(array($this, 'nextValidate')),
+
+      //NEED TO ADD SAVE SUBMIT AND SAVE VALIDATE
+    ];
+
+    // back submit
+    $form['actions']['back'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('< Back'),
+      '#submit' => array(array($this, 'backSubmit')),
+      '#validate' => array(array($this, 'backValidate')),
+      '#weight' => -1,
+    ];
+
     return $form;
   }
 
@@ -245,7 +296,7 @@ class ConfigForm extends FormBase{
   // @TODO validate if required.
   }
 
-  public function pageTwoBackValidate(array $form, FormStateInterface $form_state) {
+  public function backValidate(array $form, FormStateInterface $form_state) {
   // @TODO validate if required.
   }
 
