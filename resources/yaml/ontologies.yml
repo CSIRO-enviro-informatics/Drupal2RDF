@@ -37,7 +37,7 @@ Profile Description:
 
 RDF:
   id: rdf
-  label: RDf
+  label: RDF
   description: RDF ontology
 
 RDFS:
@@ -46,6 +46,6 @@ RDFS:
   description: RDFS ontology
 
 Schema.org:
-  id: schemaorg
+  id: schema
   label: Scehma.org
   description: Schema.org ontology
