@@ -155,9 +155,12 @@ class ConfigForm extends FormBase{
     $this->chosen_content_type_machine = $value['content-type'];
     $this->chosen_content_type_fields = $this->getFields($this->chosen_content_type_machine);
 
-    var_dump($this->chosen_ontology);
-    var_dump($this->ontology->getLabels());
-    var_dump($this->chosen_ontology_property_labels);
+    // make key/value array of classes
+    $ont_classes = array_combine(array_keys($this->chosen_ontology_classes), array_column($this->chosen_ontology_classes, 'label'));
+    var_dump($ont_classes);
+
+    //var_dump($this->chosen_ontology);
+    //var_dump($this->ontology->getLabels());
 
     // top of form displaying current data
     $form['#title'] = $this->t('Semantic Map');
@@ -174,7 +177,7 @@ class ConfigForm extends FormBase{
       '#title' => $this->t(' "@ont" Class Types', array('@ont' => $this->chosen_ontology_label)),
       '#description' => $this->t('Select the Ontology Class you want to use'),
       '#type' => 'select',
-      '#options' => array_column($this->chosen_ontology_classes, 'label'),
+      '#options' => $ont_classes,
         //'#default_value' => $form_state->getValue('rdf-type', ''),
     ];
 
@@ -205,23 +208,18 @@ class ConfigForm extends FormBase{
     // values from 2nd page
     $value = $form_state->get(['page_values', 2]);
 
-    // local array of class labels to set global chosen class
-    $classList = array_column($this->chosen_ontology_classes, 'label');
-    $this->chosen_ontology_class = $classList[$value['class-type']];
+    // set chosen class
+    $this->chosen_ontology_class = $value['class-type'];
 
-    var_dump($this->chosen_ontology_class);
+    // make key/value array of properties
+    $ont_properties = array_combine(array_keys($this->chosen_ontology_properties), array_column($this->chosen_ontology_properties, 'label'));
+    var_dump($ont_properties);
 
-    // set ontArray and get properties
-    $property_labels = array_column($this->chosen_ontology_properties, 'label');
-    $property_descriptions = array_column($this->chosen_ontology_properties, 'description');
-
+    // get entity instances of content type
     $instances = array_filter(\Drupal::entityManager()
       ->getFieldDefinitions('node', $this->chosen_content_type_machine), function ($field_definition) {
       return $field_definition instanceof FieldConfigInterface;
     });
-    $this->chosen_content_type_field_machines = array_keys($instances);
-
-    var_dump(array_keys($instances));
 
     // top section
     $form['#title'] = $this->t('Semantic Map');
@@ -240,10 +238,10 @@ class ConfigForm extends FormBase{
       ),
     );
 
-    // Next, loop through the $ct_fields array, array.length times,
-    // add select dropdown of ont per ct_field, and enable box.
+    // Loop through the instances (machine names) array, array.length times,
+    // add select dropdown of ont property per field, and enable box.
     // creates an associative array for each element
-    foreach ($this->chosen_content_type_field_machines as $field) {
+    foreach (array_keys($instances) as $field) {
       $table[$field] = array(
         'enable' => array(
           '#type' => 'checkbox',
@@ -258,13 +256,13 @@ class ConfigForm extends FormBase{
           '#type' => 'select',
           '#title_display' => 'invisible',
           '#title' => $this->t('Ontology Properties'),
-          '#options' => $property_labels,
+          '#options' => $ont_properties,
           '#empty_option' => $this->t('- Select a field type -'),
         ),
       );
     }
 
-    // set form to table
+    // set form to the built table table
     $form['fields'] = $table;
 
     // next button
@@ -287,9 +285,6 @@ class ConfigForm extends FormBase{
       '#validate' => array(array($this, 'backValidate')),
       '#weight' => -1,
     ];
-
-    $mappings = $this->getEntityMappings($this->chosen_content_type_machine);
-    var_dump($mappings);
 
     return $form;
   }
@@ -362,8 +357,6 @@ class ConfigForm extends FormBase{
     $classes = $this->ontology->getClasses($ontArray);
     $ontology_classes = array_column($classes, 'label');
 
-    $ontology_class = $ontology_classes[$page_two_values['class-type']];
-
     // page 3 variables
 
     // DELETE ALL ABOVE??
@@ -375,7 +368,6 @@ class ConfigForm extends FormBase{
     // get mappings, given content type ct_machine
     $mappings = $this->getEntityMappings($ct_machine);
 
-    $propArray = array();
 
     // Add mapping for title field if no title exists (default is sechma:name)
     //if ($this->entityTypeId === 'node'){
@@ -391,10 +383,8 @@ class ConfigForm extends FormBase{
     // loop and append ont_property if enabled, to content type
     foreach ($form_values as $key => $value) {
       if($value['enable'] == TRUE && $value['ont_property'] != NULL){
-        // ont id + property name
-        //$property = $this->chosen_ontology['id'] . ":" . $this->chosen_ontology_property_labels[$value['ont_property']];
-
-        $property = 'http://promsns.org/def/agr#hadImperative';
+        // get selected property values
+        $property = $value['ont_property'];
 
         $mappings->setFieldMapping($key, array(
           'properties' => array($property), // appends #option
@@ -402,19 +392,13 @@ class ConfigForm extends FormBase{
         );
       }
     }
+    $mappings->setBundleMapping(array('types' => array($this->chosen_ontology_class)));
+
     $mappings->save();
-
-
-    // map class to type. ontology ID + class name
-    $type = $this->t($this->chosen_ontology['id'] . ":" . $this->chosen_ontology_class);
-    $mappings->setBundleMapping(array('types' => array($ontology_class)))->save();
-
-
 
 
     $message = $this->t($this->chosen_ontology['id'] . ":" . $this->chosen_ontology_class);
 
-    $therdf = rdf_rdf_namespaces();
 
     // NEEDS UPDATE TO CHECK FOR name
     // check name, if no name, add schema:name
