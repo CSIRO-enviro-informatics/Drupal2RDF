@@ -24,7 +24,8 @@ class ConfigForm extends FormBase{
   // user chosen data
   public $chosen_ontology; // user chosen ontology array[id, label, desc]
   public $chosen_ontology_classes; // list of classes of a given ontology label
-  public $chosen_ontology_properties;
+  public $chosen_ontology_properties; //
+  public $chosen_ontology_property_labels;
   public $chosen_ontology_class; //
   public $chosen_ontology_label; // user chosen ontology label
 
@@ -32,6 +33,7 @@ class ConfigForm extends FormBase{
   public $chosen_content_type_label; // user chosen content type label
   public $chosen_content_type_machine; // user chosen content type machine name
   public $chosen_content_type_fields; // fields given a user chosen content type
+  public $chosen_content_type_field_machines;
 
   // constructor
   public function __construct(){
@@ -147,6 +149,7 @@ class ConfigForm extends FormBase{
     $this->chosen_ontology = $this->ontology->getOntology($this->chosen_ontology_label);
     $this->chosen_ontology_classes = $this->ontology->getClasses($this->chosen_ontology);
     $this->chosen_ontology_properties = $this->ontology->getProperties($this->chosen_ontology);
+    $this->chosen_ontology_property_labels = array_column($this->chosen_ontology_properties, 'label');
 
     $this->chosen_content_type_label = $this->content_types[$value['content-type']];
     $this->chosen_content_type_machine = $value['content-type'];
@@ -154,6 +157,7 @@ class ConfigForm extends FormBase{
 
     var_dump($this->chosen_ontology);
     var_dump($this->ontology->getLabels());
+    var_dump($this->chosen_ontology_property_labels);
 
     // top of form displaying current data
     $form['#title'] = $this->t('Semantic Map');
@@ -211,6 +215,14 @@ class ConfigForm extends FormBase{
     $property_labels = array_column($this->chosen_ontology_properties, 'label');
     $property_descriptions = array_column($this->chosen_ontology_properties, 'description');
 
+    $instances = array_filter(\Drupal::entityManager()
+      ->getFieldDefinitions('node', $this->chosen_content_type_machine), function ($field_definition) {
+      return $field_definition instanceof FieldConfigInterface;
+    });
+    $this->chosen_content_type_field_machines = array_keys($instances);
+
+    var_dump(array_keys($instances));
+
     // top section
     $form['#title'] = $this->t('Semantic Map');
     $form['description'] = array(
@@ -231,7 +243,7 @@ class ConfigForm extends FormBase{
     // Next, loop through the $ct_fields array, array.length times,
     // add select dropdown of ont per ct_field, and enable box.
     // creates an associative array for each element
-    foreach ($this->chosen_content_type_fields as $field) {
+    foreach ($this->chosen_content_type_field_machines as $field) {
       $table[$field] = array(
         'enable' => array(
           '#type' => 'checkbox',
@@ -275,6 +287,9 @@ class ConfigForm extends FormBase{
       '#validate' => array(array($this, 'backValidate')),
       '#weight' => -1,
     ];
+
+    $mappings = $this->getEntityMappings($this->chosen_content_type_machine);
+    var_dump($mappings);
 
     return $form;
   }
@@ -354,15 +369,52 @@ class ConfigForm extends FormBase{
     // DELETE ALL ABOVE??
 
 
-
-
+    // get form values
+    $form_values = $form_state->getValue('fields');
 
     // get mappings, given content type ct_machine
     $mappings = $this->getEntityMappings($ct_machine);
 
+    $propArray = array();
+
+    // Add mapping for title field if no title exists (default is sechma:name)
+    //if ($this->entityTypeId === 'node'){
+      //$type = $mapping->getFieldMapping('title');
+      //if (empty($type)){
+        //$mapping->setFieldMapping('title', array(
+          //'properties' => array('schema:name'),
+          //)
+        //);
+      //}
+    //}
+
+    // loop and append ont_property if enabled, to content type
+    foreach ($form_values as $key => $value) {
+      if($value['enable'] == TRUE && $value['ont_property'] != NULL){
+        // ont id + property name
+        //$property = $this->chosen_ontology['id'] . ":" . $this->chosen_ontology_property_labels[$value['ont_property']];
+
+        $property = 'http://promsns.org/def/agr#hadImperative';
+
+        $mappings->setFieldMapping($key, array(
+          'properties' => array($property), // appends #option
+          )
+        );
+      }
+    }
+    $mappings->save();
+
+
+    // map class to type. ontology ID + class name
+    $type = $this->t($this->chosen_ontology['id'] . ":" . $this->chosen_ontology_class);
+    $mappings->setBundleMapping(array('types' => array($ontology_class)))->save();
+
+
+
+
     $message = $this->t($this->chosen_ontology['id'] . ":" . $this->chosen_ontology_class);
 
-    //$mappings->setBundleMapping(array('types' => array($ontology_class)))->save();
+    $therdf = rdf_rdf_namespaces();
 
     // NEEDS UPDATE TO CHECK FOR name
     // check name, if no name, add schema:name
@@ -374,7 +426,7 @@ class ConfigForm extends FormBase{
     // iterate through enabled properties, and append them to $ontology_properties
 
 
-    //drupal_set_message(print_r($message, TRUE));
-    drupal_set_message($message);
+    //drupal_set_message(print_r($mappings, TRUE));
+    drupal_set_message(print_r($mappings, TRUE));
   }
 }
