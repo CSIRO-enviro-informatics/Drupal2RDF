@@ -85,10 +85,6 @@ class ConfigForm extends FormBase{
 
   // build form page 1
   public function buildForm(array $form, FormStateInterface $form_state){
-
-    //$testData = $this->getEntityMappings('article');
-    //var_dump($testData);
-
     // Display page 2 if $form_state->get('page_num') == 2.
     if ($form_state->has('page_num') && $form_state->get('page_num') == 2){
       return $this->buildFormPageTwo($form, $form_state);
@@ -147,9 +143,30 @@ class ConfigForm extends FormBase{
     // set global data (chosen ont label, ont array, ont classes, properties, ct types)
     $this->chosen_ontology_label = $this->ontology_labels[$value['ontology-type']];
     $this->chosen_ontology = $this->ontology->getOntology($this->chosen_ontology_label);
-    $this->chosen_ontology_classes = $this->ontology->getClasses($this->chosen_ontology);
-    $this->chosen_ontology_properties = $this->ontology->getProperties($this->chosen_ontology);
-    $this->chosen_ontology_property_labels = array_column($this->chosen_ontology_properties, 'label');
+
+    // try and catch the chosen Ontologies
+    // classes and properties .yml files
+    // for an empty file.
+    try{
+      if(is_null($this->chosen_ontology_classes = $this->ontology->getClasses($this->chosen_ontology))){
+        throw new \Exception('Error: The chosen Ontology has an empty "classes.yml" file');
+      }
+    }
+    catch(\Exception $e){
+      $form_state->set('page_num', 1);
+      drupal_set_message(($e->getMessage()), 'error');
+      return $this->buildForm($form, $form_state);
+    }
+    try{
+      if(is_null($this->chosen_ontology_properties = $this->ontology->getProperties($this->chosen_ontology))){
+        throw new \Exception('Error: The chosen Ontology has an empty "properties.yml" file');
+      }
+    }
+    catch(\Exception $e){
+      $form_state->set('page_num', 1);
+      drupal_set_message(($e->getMessage()), 'error');
+      return $this->buildForm($form, $form_state);
+    }
 
     $this->chosen_content_type_label = $this->content_types[$value['content-type']];
     $this->chosen_content_type_machine = $value['content-type'];
@@ -157,10 +174,6 @@ class ConfigForm extends FormBase{
 
     // make key/value array of classes
     $ont_classes = array_combine(array_keys($this->chosen_ontology_classes), array_column($this->chosen_ontology_classes, 'label'));
-    var_dump($ont_classes);
-
-    //var_dump($this->chosen_ontology);
-    //var_dump($this->ontology->getLabels());
 
     // top of form displaying current data
     $form['#title'] = $this->t('Semantic Map');
@@ -213,7 +226,6 @@ class ConfigForm extends FormBase{
 
     // make key/value array of properties
     $ont_properties = array_combine(array_keys($this->chosen_ontology_properties), array_column($this->chosen_ontology_properties, 'label'));
-    var_dump($ont_properties);
 
     // get entity instances of content type
     $instances = array_filter(\Drupal::entityManager()
@@ -271,10 +283,6 @@ class ConfigForm extends FormBase{
       '#type' => 'submit',
       '#value' => $this->t('Save'),
       '#button_type' => 'primary',
-      //'#submit' => array(array($this, 'nextSubmit')),
-      //'#validate' => array(array($this, 'nextValidate')),
-
-      //NEED TO ADD SAVE SUBMIT AND SAVE VALIDATE
     ];
 
     // back submit
@@ -289,11 +297,7 @@ class ConfigForm extends FormBase{
     return $form;
   }
 
-  // returns fields for a given content-type (string)(ct_machineName)
-  // THIS CAN BE MORE EFFICIENT. BUNDLE SHOULD = BUNDLEFIELDS I THINK
-
-  // THE ANSWER IS HERE FOR SAVING AND HANDLING THE DATA! NODE AND BUNDLE! USE MACHINE_NAME
-  // entityManager must be changed to entityTypeManager
+  // entityManager must be changed to entityTypeManager before Drupal 9
   public function getFields(string $bundle){
     $entityManager = \Drupal::service('entity_field.manager');
     $entity_type_id = 'node';
@@ -307,12 +311,12 @@ class ConfigForm extends FormBase{
 
     // filter to only the editable fields
     $node = $bundleFields;
-    $newArr = [];
+    $filtered = [];
     foreach ($node['node'] as $key){
-      $newArr[] = $key['label'];
+      $filtered[] = $key['label'];
     }
 
-    return $newArr;
+    return $filtered;
   }
 
   public function getEntityMappings(string $bundle){
@@ -323,8 +327,6 @@ class ConfigForm extends FormBase{
     return $mappings;
   }
 
-
-
   public function nextValidate(array $form, FormStateInterface $form_state) {
   // @TODO validate if required.
   }
@@ -333,84 +335,46 @@ class ConfigForm extends FormBase{
   // @TODO validate if required.
   }
 
-
-  // THIS IS TESTING ONLY ATM
+  // submit the ont class and properties of the form
   public function submitForm(array &$form, FormStateInterface $form_state){
-
-    // page 1 variables
-    $page_one_values = $form_state->get(['page_values', 1]);
-    $content_type = $page_one_values['content-type'];
-    $ontology_type = $page_one_values['ontology-type'];
-
-    // ct_machine name
-    $ct_names = node_type_get_names();
-    $ct_name = $ct_names[$page_one_values['content-type']];
-    $ct_machine = $page_one_values['content-type'];
-
-    $ont_names = $this->ontology->getLabels();
-    $ont = $ont_names[$page_one_values['ontology-type']];
-
-    //page 2 variables
-    $page_two_values = $form_state->get(['page_values', 2]);
-
-    $ontArray = $this->ontology->getOntology($ont);
-    $classes = $this->ontology->getClasses($ontArray);
-    $ontology_classes = array_column($classes, 'label');
-
-    // page 3 variables
-
-    // DELETE ALL ABOVE??
-
 
     // get form values
     $form_values = $form_state->getValue('fields');
 
     // get mappings, given content type ct_machine
-    $mappings = $this->getEntityMappings($ct_machine);
-
+    $mappings = $this->getEntityMappings($this->chosen_content_type_machine);
 
     // Add mapping for title field if no title exists (default is sechma:name)
-    //if ($this->entityTypeId === 'node'){
-      //$type = $mapping->getFieldMapping('title');
-      //if (empty($type)){
-        //$mapping->setFieldMapping('title', array(
-          //'properties' => array('schema:name'),
-          //)
-        //);
-      //}
-    //}
+    /*
+    if ($this->entityTypeId === 'node'){
+      $type = $mapping->getFieldMapping('title');
+      if (empty($type)){
+        $mapping->setFieldMapping('title', array(
+          'properties' => array('schema:name'),
+          )
+        );
+      }
+    }
+    */
 
-    // loop and append ont_property if enabled, to content type
+    // set bundle type (ontology_class)
+    $mappings->setBundleMapping(array('types' => array($this->chosen_ontology_class)));
+
+    // loop and append ontology_property to content type, if enabled
     foreach ($form_values as $key => $value) {
       if($value['enable'] == TRUE && $value['ont_property'] != NULL){
         // get selected property values
         $property = $value['ont_property'];
-
         $mappings->setFieldMapping($key, array(
           'properties' => array($property), // appends #option
           )
         );
       }
     }
-    $mappings->setBundleMapping(array('types' => array($this->chosen_ontology_class)));
 
+    // save the RDF mappings to the node
     $mappings->save();
 
-
-    $message = $this->t($this->chosen_ontology['id'] . ":" . $this->chosen_ontology_class);
-
-
-    // NEEDS UPDATE TO CHECK FOR name
-    // check name, if no name, add schema:name
-
-    // Add mapping for title field.
-
-
-
-    // iterate through enabled properties, and append them to $ontology_properties
-
-
-    //drupal_set_message(print_r($mappings, TRUE));
     drupal_set_message(print_r($mappings, TRUE));
   }
 }

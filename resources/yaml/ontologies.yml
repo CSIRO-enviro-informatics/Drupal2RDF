@@ -46,6 +46,6 @@ RDFS:
   description: RDFS ontology
 
 Schema.org:
-  id: schema
-  label: Scehma.org
+  id: schemaorg
+  label: Schema.org
   description: Schema.org ontology
